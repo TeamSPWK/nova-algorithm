@@ -13,7 +13,7 @@ Claude Code skills for multi-agent orchestration and multi-LLM consultation.
 ## Install
 
 ```bash
-git clone https://github.com/ChoSungHyeon/nova-algorithm.git ~/.nova-algorithm
+git clone https://github.com/TeamSPWK/nova-algorithm.git ~/.nova-algorithm
 cd ~/.nova-algorithm
 bash install.sh
 ```
