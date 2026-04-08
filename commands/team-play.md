@@ -15,7 +15,7 @@ allowed-tools:
   - Glob
   - Grep
   - Bash
-  - TodoWrite
+  - TaskCreate
   - Skill
 ---
 
@@ -39,7 +39,8 @@ You are the **Orchestrator**. Coordinate specialized agents and enforce quality 
 ### Step 1.0: Doc Scout
 
 Launch one `Explore` agent to build a navigation map before any code analysis:
-- Read `nova-context.md` (or `CLAUDE.md`), ALL L0/L1 docs, task-relevant L2/L3 only
+- Read `nova-context.md` (or `CLAUDE.md`) — 문서 안에 참조된 Agent Docs 경로를 따라가서 모두 읽음
+- **Fallback** (no docs found): Glob for `README.md`, `package.json`, `pyproject.toml`, `Makefile` → infer project structure from directory layout + entry points
 - Output: system boundaries, module responsibilities, data flow, "where would changes live?"
 
 **This step gates Step 1.1** — all analysis agents receive the navigation map.
@@ -68,7 +69,7 @@ Each agent receives the Doc Scout's navigation map.
 
 Each scaled agent receives only its assigned module scope + cross-module interfaces. All run in parallel.
 
-### Step 1.1.2: Synthesizer
+### Step 1.1.1: Synthesizer
 
 After all Step 1.1 agents complete, launch one `general-purpose` agent (`model: opus`) to consolidate results.
 
@@ -98,7 +99,7 @@ After all Step 1.1 agents complete, launch one `general-purpose` agent (`model: 
 
 The orchestrator receives ONLY the Synthesizer output, not raw agent outputs. This preserves orchestrator context for later phases.
 
-### Step 1.1.1: Experimental Profiler (on-demand)
+### Step 1.1.2: Experimental Profiler (on-demand)
 
 Spawned in 3 situations:
 1. Analysis agents submit explicit `## Profiling Request` sections
@@ -124,7 +125,7 @@ Gap-detector agents have independent context windows that can fill up on large v
 4. **Context limit hit** → Spawn new gap-detector with remaining unchecked items + already-verified results summary
 5. **Merge rule**: Any sub-gate REJECT → entire gate REJECTS. All sub-gates PASS → gate PASSES.
 
-### Step 1.2: Analysis Verification Gate
+### Step 1.2: Analysis Gate
 
 Launch `gap-detector` agent(s) per Scaling Rule above. **Default verdict is REJECT** — the agent must find evidence to PASS, not reasons to reject.
 
@@ -147,44 +148,37 @@ The gate agent MUST produce this table. No free-form narrative allowed as the pr
 - "likely", "probably", "seems" in analysis without profiling evidence → REJECT
 - Symptom-only analysis (WHERE without WHY) → REJECT
 - Affected pattern used elsewhere but call sites not checked → REJECT
-- **Depth Completeness Check** ⚠️ MOST COMMON ISSUE: Analysis reaches candidate hypotheses but stops before confirming/refuting them. This is NOT a failure — it's good progress that needs one more step. Detection patterns: "추가 검증 필요", "후보", "~일 수 있음", "~할 수 있음", "candidates", "could be", numbered hypotheses without conclusion, "계속 파시겠습니까?", "다음 단계". When detected → verdict is **DEEPEN** (not REJECT). The analysis so far is valuable input for the next round.
+- **Depth Completeness Check**: Analysis reaches candidate hypotheses but stops before confirming/refuting → verdict is **DEEPEN** (not REJECT). The analysis so far is valuable input for the next round.
 
 #### Verdicts
-
-The gate produces one of three verdicts:
 
 | Verdict | Meaning | Action |
 |---------|---------|--------|
 | **PASS** | All claims verified, root causes confirmed | → Phase 2 |
-| **REJECT** | Evidence wrong, claims unverifiable | → On Rejection (below) |
-| **DEEPEN** | Analysis reached good candidates but stopped before confirmation | → Auto-Continuation (below) |
+| **REJECT** | Evidence wrong, claims unverifiable | → On Rejection |
+| **DEEPEN** | Good candidates, needs confirmation | → Auto-Continuation |
 
 #### On DEEPEN (auto-continuation)
 
-This is the most common outcome. The analysis identified plausible candidates — now the gate **automatically extends** the analysis without asking the user:
-
-1. Gate extracts each unresolved hypothesis from the analysis
-2. For each hypothesis, **auto-launch Step 1.1.1 Profiler** in parallel — pass: the hypothesis, the evidence gathered so far, target files from the analysis, navigation map
-3. Each Profiler MUST reach `confirmed` or `refuted` (not "inconclusive")
-4. Profiler results are appended to the original analysis
-5. Gate re-runs on the enriched analysis
-6. Max 2 DEEPEN rounds — if still unresolved after 2 rounds, PASS with explicit "unconfirmed" tags so Phase 2 plans defensively
-
-**Key principle**: DEEPEN is positive momentum, not failure. The first-pass analysis narrowed the search space — the Profiler just follows through.
+1. Gate extracts each unresolved hypothesis
+2. **Auto-launch Step 1.1.2 Profiler** in parallel per hypothesis
+3. Each Profiler MUST reach `confirmed` or `refuted`
+4. Profiler results appended to original analysis → gate re-runs
+5. Max 2 DEEPEN rounds — if still unresolved, PASS with "unconfirmed" tags so Phase 2 plans defensively
 
 #### On Rejection
 1. **First**: Specific feedback to original agent — "Provide evidence for X", "Trace deeper into Y"
 2. **Second**: Launch **new** analysis agent (fresh perspective) with original task + navigation map + previous analysis (marked "unverified")
 
 #### On Pass
-- Compile verified findings → TodoWrite checklist → Phase 2
+- Compile verified findings → TaskCreate checklist → Phase 2
 - If task document is stale or prerequisites missing → **report to user and stop**
 
 ---
 
 ## Phase 2: PLANNING
 
-**Goal**: Concrete, step-by-step implementation plan.
+**Goal**: Concrete, gate-verified implementation plan.
 
 ### Step 2.0: Plan Drafting
 - Independent subtasks → parallel `Plan` agents
@@ -220,9 +214,7 @@ Auth/DB/payment auto-escalate one level.
 
 Review checklist: solves root cause? ordering dependencies? simpler alternative? Pike's risks addressed?
 
----
-
-## Phase 3: PLAN VERIFICATION GATE
+### Step 2.3: Plan Gate
 
 Launch `gap-detector` (per Scaling Rule) to verify plan completeness:
 
@@ -238,12 +230,14 @@ On rejection → return to Step 2.2. Max 2 retries → escalate to user.
 
 ---
 
-## Phase 4: IMPLEMENTATION
+## Phase 3: IMPLEMENTATION
 
-### Step 4.0: Document Paths
+**Goal**: Execute plan and verify correctness.
+
+### Step 3.0: Document Paths
 Compile doc paths by level (L0/L1=all agents, L2/L3/DataContract=relevant agents only). Pass paths only — agents read directly.
 
-### Step 4.1: Execution
+### Step 3.1: Execution
 - Independent changes → parallel `general-purpose` agents
 - Dependent changes → sequential
 - Each agent receives: plan items, doc paths, and these instructions:
@@ -252,9 +246,7 @@ Compile doc paths by level (L0/L1=all agents, L2/L3/DataContract=relevant agents
 - Agents commit nothing — orchestrator reviews all changes
 - Blockers → retry with adjusted plan or escalate
 
----
-
-## Phase 5: IMPLEMENTATION VERIFICATION GATE
+### Step 3.2: Implementation Gate
 
 Launch `gap-detector` (per Scaling Rule):
 
@@ -266,18 +258,18 @@ Launch `gap-detector` (per Scaling Rule):
 | Syntax | Syntax errors or obvious bugs |
 | Regressions | Breaks existing patterns without justification |
 
-### Discovered Issues Triage
+#### Discovered Issues Triage
 | Effort | Action |
 |--------|--------|
 | **Small** (1-5 lines) | Fix immediately via quick-fix agent |
-| **Medium** (10-30 lines) | Queue for Phase 7 residual loop |
+| **Medium** (10-30 lines) | Queue for Completion Gate (Phase 5) |
 | **Large** (cross-module) | Write Problem Definition Document for future session |
 
 On rejection → launch targeted fix agents. Max 2 retries → escalate.
 
 ---
 
-## Phase 6: BENCHMARK
+## Phase 4: BENCHMARK
 
 Read `nova-context.md` (or `CLAUDE.md`) for benchmark commands and baselines.
 
@@ -286,26 +278,30 @@ Read `nova-context.md` (or `CLAUDE.md`) for benchmark commands and baselines.
 3. Run narrowest meaningful validation — proportional to change size
 4. Use `run_in_background`, do NOT sleep
 5. Compare against baselines. No baseline → report raw results.
+6. **Transition rule**: If benchmark runs via `run_in_background`, proceed to Phase 5 immediately with benchmark pending. When benchmark completes, append results to Phase 5 verdict — a regression flips PASS to RESIDUAL.
 
 ---
 
-## Phase 7: RESIDUAL COMPLETION LOOP
+## Phase 5: COMPLETION GATE
 
-Launch `gap-detector` (per Scaling Rule) to compare **original task document** against implementation:
+**Goal**: Verify 100% task completion. Catch anything missed by prior gates.
+
+Launch `gap-detector` (per Scaling Rule) to compare **original task document** against final implementation:
 
 | Check | Verdict |
 |-------|---------|
-| All requirements implemented? | COMPLETE / RESIDUAL |
-| Stubs remaining? | COMPLETE / RESIDUAL |
-| Split items actually done? | COMPLETE / RESIDUAL |
-| Medium discovered issues addressed? | COMPLETE / RESIDUAL |
+| All requirements implemented? | PASS / RESIDUAL |
+| Stubs remaining? | PASS / RESIDUAL |
+| Split items actually done? | PASS / RESIDUAL |
+| Medium discovered issues addressed? | PASS / RESIDUAL |
+| Benchmark regressions? | PASS / RESIDUAL |
 
-### On COMPLETE → report and end.
+### On PASS → report and end.
 
 ### On RESIDUAL
-1. Write residual work document (in memory): completed items, remaining items, medium issues, context
-2. Spawn ALL new agents (fresh, no context contamination) with: residual doc, original task, previous navigation map, changed file list
-3. Re-enter Phase 1 (residual scope only) → 2 → 3 → 4 → 5 → 6 → 7
+1. Write residual work to a structured summary string (NOT a file) containing: completed items, remaining items with file:line, medium discovered issues, and context from prior phases. This summary is passed directly to new agents via their prompt.
+2. Spawn ALL new agents (fresh, no context contamination) with: residual summary, original task description, Doc Scout navigation map, changed file list
+3. Re-enter Phase 1 (residual scope only) → full cycle
 
 **Max 3 cycles** (initial + 2 residual). Still RESIDUAL → escalate with explicit remaining list.
 
@@ -315,20 +311,22 @@ Launch `gap-detector` (per Scaling Rule) to compare **original task document** a
 
 Cost/speed optimization: Orchestrator runs on Opus, sub-agents use Sonnet where sufficient.
 
-| Agent | Model | Rationale |
-|-------|-------|-----------|
-| **Doc Scout** (1.0) | `sonnet` | Doc reading + summarization |
-| **Latent Risk** (1.1) | `sonnet` | Pattern search, grep-heavy |
-| **Codebase State** (1.1) | `sonnet` | File/function existence checks |
-| **Root Cause** (1.1) | `opus` | Deep causal reasoning required |
-| **Pike's Divergent** (1.1) | `opus` | Architectural judgment |
-| **Synthesizer** (1.1.2) | `opus` | Cross-agent reasoning, conflict resolution |
-| **Profiler** (1.1.1) | `sonnet` | Experiment + measurement |
-| **All Gates** (gap-detector) | `sonnet` | Structured checklist verification |
-| **Plan Drafting** (2.0) | `opus` | Cross-module dependency reasoning |
-| **Plan Review** (code-analyzer) | `sonnet` | Pattern matching against checklist |
-| **Implementation** (4.1) | `sonnet` | Code generation — Sonnet matches Opus |
-| **Quick-fix** (5) | `sonnet` | Small targeted fixes |
+| Agent | Model | Tools | Rationale |
+|-------|-------|-------|-----------|
+| **Doc Scout** (1.0) | `sonnet` | Read, Glob, Grep | Doc reading + summarization |
+| **Latent Risk** (1.1) | `sonnet` | Read, Glob, Grep | Pattern search, grep-heavy |
+| **Codebase State** (1.1) | `sonnet` | Read, Glob, Grep | File/function existence checks |
+| **Root Cause** (1.1) | `opus` | Read, Glob, Grep, Bash | Deep causal reasoning required |
+| **Pike's Divergent** (1.1) | `opus` | Read, Glob, Grep | Architectural judgment |
+| **Synthesizer** (1.1.1) | `opus` | Read, Glob, Grep | Cross-agent reasoning, conflict resolution |
+| **Profiler** (1.1.2) | `sonnet` | Read, Glob, Grep, Bash | Experiment + measurement |
+| **All Gates** (gap-detector) | `sonnet` | Read, Glob, Grep | Structured checklist verification |
+| **Plan Drafting** (2.0) | `opus` | Read, Glob, Grep | Cross-module dependency reasoning |
+| **Plan Review** (code-analyzer) | `sonnet` | Read, Glob, Grep | Pattern matching against checklist |
+| **Implementation** (3.1) | `sonnet` | Read, Write, Edit, Glob, Grep, Bash | Code generation — Sonnet matches Opus |
+| **Quick-fix** (3.2) | `sonnet` | Read, Write, Edit, Glob, Grep | Small targeted fixes |
+
+**Tool gating rule**: Only Phase 3 (Implementation) agents receive Write/Edit. Phase 1-2 agents are read-only — if a Profiler needs temporary test files, use Bash with explicit cleanup.
 
 When spawning agents, always pass `model: "sonnet"` or `model: "opus"` per this table.
 
@@ -340,9 +338,10 @@ When spawning agents, always pass `model: "sonnet"` or `model: "opus"` per this 
 2. **Parallel by default** — sequential only for real dependencies
 3. **Trust but verify** — all agent outputs go through gates
 4. **Escalate, don't loop** — max 2 retries per gate, then ask user
-5. **Progress** — TodoWrite after each phase
+5. **Progress** — TaskCreate after each phase
 6. **Korean responses** — formal/polite (존댓말)
 7. **English code** — code, commits, technical identifiers
 8. **No splitting** — complete all task items this session
-9. **100% completion** — Phase 7 loop until done. "Next session" not allowed
+9. **100% completion** — Completion Gate loop until done. "Next session" not allowed
 10. **Fix what you find** — small=immediate, medium=residual, large=document. Never ignore
+11. **Cost awareness** — track sub-agent count per cycle. Log running total at each phase boundary. If total exceeds 30, report to user with summary before spawning more — but do NOT stop if accuracy demands it
