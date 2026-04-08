@@ -44,18 +44,59 @@ Launch one `Explore` agent to build a navigation map before any code analysis:
 
 **This step gates Step 1.1** — all analysis agents receive the navigation map.
 
-### Step 1.1: Deep Analysis (4 parallel Explore agents)
+### Step 1.1: Deep Analysis (dynamic scaling)
 
 Each agent receives the Doc Scout's navigation map.
 
 **MANDATORY DIRECTIVE — include verbatim in every analysis agent prompt:**
 > "Wrong analysis wastes the entire plan-implement-verify cycle. Do NOT guess — trace to the end. Read actual code, follow execution paths. 'It's probably X' is not analysis — report only facts confirmed by code evidence (file:line). If a claim uses hedging language ('seems like', 'probably', 'might be', 'likely'), it is automatically a Profiling Request — include a `## Profiling Request` section specifying: hypothesis, measurement needed, suggested method."
 
-**Agents:**
-1. **Root Cause**: Trace execution path → WHERE and WHY it fails (file:line). Distinguish symptom vs cause. When you reach candidate hypotheses, **keep going** — trace each one to confirmed/refuted. If you cannot confirm within your tools, submit a `## Profiling Request` with the specific hypothesis and measurement needed. Do NOT stop at "candidates identified, further verification needed" — that's the midpoint, not the endpoint.
-2. **Latent Risk**: Shared patterns, side effects, callers, config dependencies, coverage gaps.
-3. **Codebase State**: Do referenced files/functions exist? Dependencies met? Already implemented?
-4. **Pike's Divergent**: Challenge assumptions — is this complexity necessary? Simpler path? Data vs logic imbalance? Output: `Current mechanism → Alternative hypothesis → Trade-off → Verdict [Explore/Justified]`
+**Fixed agents (always 1 each):**
+1. **Codebase State**: Do referenced files/functions exist? Dependencies met? Already implemented?
+2. **Pike's Divergent**: Challenge assumptions — is this complexity necessary? Simpler path? Data vs logic imbalance? Output: `Current mechanism → Alternative hypothesis → Trade-off → Verdict [Explore/Justified]`
+
+**Scaled agents (module-based, from Doc Scout output):**
+3. **Root Cause**: Trace execution path → WHERE and WHY it fails (file:line). Distinguish symptom vs cause. When you reach candidate hypotheses, **keep going** — trace each one to confirmed/refuted. If you cannot confirm within your tools, submit a `## Profiling Request` with the specific hypothesis and measurement needed. Do NOT stop at "candidates identified, further verification needed" — that's the midpoint, not the endpoint.
+4. **Latent Risk**: Shared patterns, side effects, callers, config dependencies, coverage gaps.
+
+**Scaling rule:**
+| Affected modules | Root Cause agents | Latent Risk agents | Total |
+|-----------------|-------------------|-------------------|-------|
+| 1-2 modules | 1 | 1 | 4 |
+| 3-4 modules | 1 per module | 1 per module | 2 + 2×modules |
+| 5+ modules | 1 per module | 1 shared + 1 per 3 modules | 2 + modules + ceil(modules/3) |
+
+Each scaled agent receives only its assigned module scope + cross-module interfaces. All run in parallel.
+
+### Step 1.1.2: Synthesizer
+
+After all Step 1.1 agents complete, launch one `general-purpose` agent (`model: opus`) to consolidate results.
+
+- **Input**: All analysis agent outputs (full text)
+- **Output** (compressed, for orchestrator + gate):
+  1. **Root Causes** — confirmed causes with file:line evidence, ranked by severity
+  2. **Risk Map** — cross-module side effects, ordered by blast radius
+  3. **Codebase Readiness** — blockers, missing prerequisites, stale references
+  4. **Pike's Verdict** — complexity justified / simpler path available
+  5. **Claim Table** — every factual claim with source agent + cited file:line (for gate verification)
+  6. **Conflicts** — where agents disagree, with both sides' evidence
+  7. **Profiling Requests** — aggregated from all agents (deduplicated)
+  8. **Gaps** — areas the Synthesizer identified as insufficiently analyzed (see below)
+
+**Synthesizer self-heal**: The Synthesizer MUST evaluate analysis completeness before finalizing. If gaps are found:
+
+| Gap type | Action |
+|----------|--------|
+| **Missing coverage** — a module/path not analyzed by any agent | Spawn new `Explore` agent (`model: sonnet`) targeting that scope |
+| **Shallow analysis** — agent reported surface-level findings without tracing to root | Request deeper analysis: spawn new `Explore` agent with specific questions + prior agent's output as context |
+| **Unresolved conflict** — two agents contradict each other with evidence | Spawn `Explore` agent (`model: sonnet`) to independently verify the disputed claim |
+| **Weak evidence** — claim lacks file:line or uses hedging language | Spawn `Explore` agent to confirm or refute with concrete evidence |
+
+- Max 3 supplementary agents per Synthesizer run
+- Supplementary results are incorporated into the final output before passing to gate
+- If 3 agents aren't enough to close all gaps, tag remaining gaps as `[unresolved]` in the Claim Table so the gate can handle them
+
+The orchestrator receives ONLY the Synthesizer output, not raw agent outputs. This preserves orchestrator context for later phases.
 
 ### Step 1.1.1: Experimental Profiler (on-demand)
 
@@ -267,6 +308,29 @@ Launch `gap-detector` (per Scaling Rule) to compare **original task document** a
 3. Re-enter Phase 1 (residual scope only) → 2 → 3 → 4 → 5 → 6 → 7
 
 **Max 3 cycles** (initial + 2 residual). Still RESIDUAL → escalate with explicit remaining list.
+
+---
+
+## Model Assignment
+
+Cost/speed optimization: Orchestrator runs on Opus, sub-agents use Sonnet where sufficient.
+
+| Agent | Model | Rationale |
+|-------|-------|-----------|
+| **Doc Scout** (1.0) | `sonnet` | Doc reading + summarization |
+| **Latent Risk** (1.1) | `sonnet` | Pattern search, grep-heavy |
+| **Codebase State** (1.1) | `sonnet` | File/function existence checks |
+| **Root Cause** (1.1) | `opus` | Deep causal reasoning required |
+| **Pike's Divergent** (1.1) | `opus` | Architectural judgment |
+| **Synthesizer** (1.1.2) | `opus` | Cross-agent reasoning, conflict resolution |
+| **Profiler** (1.1.1) | `sonnet` | Experiment + measurement |
+| **All Gates** (gap-detector) | `sonnet` | Structured checklist verification |
+| **Plan Drafting** (2.0) | `opus` | Cross-module dependency reasoning |
+| **Plan Review** (code-analyzer) | `sonnet` | Pattern matching against checklist |
+| **Implementation** (4.1) | `sonnet` | Code generation — Sonnet matches Opus |
+| **Quick-fix** (5) | `sonnet` | Small targeted fixes |
+
+When spawning agents, always pass `model: "sonnet"` or `model: "opus"` per this table.
 
 ---
 
