@@ -1,6 +1,6 @@
 # Nova Algorithm
 
-Claude Code skills for multi-agent orchestration and multi-LLM consultation.
+Claude Code skills for multi-agent orchestration, multi-LLM consultation, and quality auditing.
 
 ## Skills
 
@@ -9,6 +9,8 @@ Claude Code skills for multi-agent orchestration and multi-LLM consultation.
 | `/team-play` | Command | Multi-agent orchestrated task execution with verification gates |
 | `/deep-dive-task` | Skill | Multi-AI consultation for structured TASK document creation |
 | `/llm-review` | Skill | Multi-LLM consultation wrapper (Gemini + GPT) |
+| `/pikes-filter` | Skill | Rob Pike 5 principles — code complexity & over-engineering audit |
+| `/claude-filter` | Skill | Production agent design principles — prompt/CLAUDE.md/skill audit |
 
 ## Install
 
