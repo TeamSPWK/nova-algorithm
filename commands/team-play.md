@@ -55,6 +55,7 @@ Each agent receives the Doc Scout's navigation map.
 **Fixed agents (always 1 each):**
 1. **Codebase State**: Do referenced files/functions exist? Dependencies met? Already implemented?
 2. **Pike's Divergent**: Challenge assumptions — is this complexity necessary? Simpler path? Data vs logic imbalance? Output: `Current mechanism → Alternative hypothesis → Trade-off → Verdict [Explore/Justified]`
+   - **Pike's output is ADVISORY, not executive.** A `[Explore]` verdict is a recommendation to consider alternatives — it is NEVER an execution directive. When Pike's suggestion conflicts with a pre-existing product decision (parity audit, spec, roadmap, task AC), **the pre-existing decision wins by default**. The orchestrator may only override the pre-existing decision if the user explicitly confirms, or if Pike produces concrete evidence (file:line) that the pre-existing decision is broken. Pike's scope-reduction suggestions (e.g. "don't mount, document only") must NEVER cause a documented product feature to be dropped or deferred without user confirmation.
 
 **Scaled agents (module-based, from Doc Scout output):**
 3. **Root Cause**: Trace execution path → WHERE and WHY it fails (file:line). Distinguish symptom vs cause. When you reach candidate hypotheses, **keep going** — trace each one to confirmed/refuted. If you cannot confirm within your tools, submit a `## Profiling Request` with the specific hypothesis and measurement needed. Do NOT stop at "candidates identified, further verification needed" — that's the midpoint, not the endpoint.
@@ -225,6 +226,7 @@ Launch `gap-detector` (per Scaling Rule) to verify plan completeness:
 | Vagueness | No specific file path or concrete change |
 | Scope creep | Work not in original task |
 | Unjustified split | Items excluded without concrete technical reason |
+| **AC containment** | Task doc AC contains "이 task 내에서 해결" / "resolve in this task" / "complete in this session" (or equivalent) AND a matching item is excluded from the Plan, UNLESS the exclusion cites one of the 3 valid Anti-Split reasons (external system dependency / user confirmation needed / prerequisite incomplete) with file:line or external evidence. "Scope creep avoidance" and "out of focus" are NOT valid reasons when the task AC explicitly mandates containment. |
 
 On rejection → return to Step 2.2. Max 2 retries → escalate to user.
 
@@ -285,6 +287,8 @@ Read `nova-context.md` (or `CLAUDE.md`) for benchmark commands and baselines.
 ## Phase 5: COMPLETION GATE
 
 **Goal**: Verify 100% task completion. Catch anything missed by prior gates.
+
+**HARD BLOCK — gap-detector is mandatory.** The Completion Gate PASS verdict is only valid if issued by an actual `gap-detector` agent invocation. The orchestrator has **no self-review authority** at this phase — a PASS without a gap-detector agent output is automatically invalid, regardless of orchestrator confidence, time pressure, or prior agent quota exhaustion. If agent quota is exhausted, the orchestrator MUST stop and report to the user rather than self-certify. Planner/other agent failures earlier in the cycle do NOT authorize the orchestrator to bypass this gate.
 
 Launch `gap-detector` (per Scaling Rule) to compare **original task document** against final implementation:
 
