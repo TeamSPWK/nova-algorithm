@@ -11,6 +11,7 @@ Claude Code skills for multi-agent orchestration, multi-LLM consultation, and qu
 | `/llm-review` | Skill | Multi-LLM consultation wrapper (Gemini + GPT) |
 | `/pikes-filter` | Skill | Rob Pike 5 principles — code complexity & over-engineering audit |
 | `/claude-filter` | Skill | Production agent design principles — prompt/CLAUDE.md/skill audit |
+| `/codex` | Skill | Codex CLI delegation standard — implementation handoff guide (gpt-5.3-codex) |
 
 ## Install
 
