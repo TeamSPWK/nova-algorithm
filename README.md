@@ -12,6 +12,7 @@ Claude Code skills for multi-agent orchestration, multi-LLM consultation, and qu
 | `/pikes-filter` | Skill | Rob Pike 5 principles — code complexity & over-engineering audit |
 | `/claude-filter` | Skill | Production agent design principles — prompt/CLAUDE.md/skill audit |
 | `/codex` | Skill | Codex CLI delegation standard — implementation handoff guide (gpt-5.3-codex) |
+| `/doc-publish` | Skill | **Internal (SPACEWALK)** — `docs/` → swk-doc HTML 출간, `~/public_html/` symlink 로 Tailscale 멤버 공유. swk-infra 자산 의존. |
 
 ## Install
 
