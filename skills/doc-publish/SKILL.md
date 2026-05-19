@@ -182,7 +182,39 @@ flowchart TB
 - [ ] symlink 만 만들고 원본 복사 ❌
 - [ ] `curl -sI` → 200 OK + `Cache-Control: no-cache` 헤더
 
-## 6. 참조
+## 7. 외부 환경 어댑테이션 (swk-infra 가 없을 때)
+
+본 스킬은 SPACEWALK 사내 환경(swk-infra 자산 + `~/public_html` + Tailscale)을 기본 가정. 외부 사용자나 일반 로컬에서는 4 축을 치환:
+
+| 축 | swk-infra 기본 | 로컬 대체 |
+|---|---|---|
+| 디자인 자산 | `<repo>/docs/_assets/swk-doc.{css,js}` (마스터: swk-infra) | 본인 레포에 직접 복사 OR 자체 디자인 시스템 |
+| 정적 호스팅 | `~/public_html` + `httpshare.service` (no-cache wrapper) | `python3 -m http.server` / nginx / caddy 등 |
+| 공유 URL | `http://<hostname>:8000` (Tailscale 멤버 한정) | `http://127.0.0.1:8000` 또는 본인 도메인 |
+| 캐시 무효화 | 서버 단 `Cache-Control: no-cache` 헤더 | 없으면 자산 URL 에 `?v={mtime}` 쿼리, 또는 사용자 강제 새로고침 |
+
+### 로컬 빠른 시작
+```bash
+# 1) 디자인 자산 확보 (한 번)
+mkdir -p <repo>/docs/_assets
+# swk-doc.{css,js} 를 외부에서 받았으면 거기에 두기. 없으면 본인 CSS 적용 — 컬러 가이드(§2)·빌딩블록 구조(§3) 만 따르면 호환.
+
+# 2) HTML 작성 — Step 3 표준 골격 사용
+
+# 3) 로컬 호스팅 (가장 단순)
+cd <repo>/docs && python3 -m http.server 8000
+# → http://127.0.0.1:8000/<path>/<name>.html
+
+# 4) (선택) Cache-Control 헤더 적용 — 브라우저 캐싱으로 갱신 안 보일 때
+#    swk-infra docs/machines/swk-dev.md §3.1.1 의 .server.py wrapper 패턴 참고
+#    또는 자산 URL 에 ?v=<mtime> 쿼리스트링 부착
+```
+
+### 어떤 룰이 외부에도 그대로 적용되는가
+- 컬러 3색 강제(§2), 빌딩블록 카탈로그(§3), 메타 헤더·lead·footer 강제(§1 Step 3 골격), publish 전 체크 6항목(§6 — 단 Cache-Control 체크는 본인 서버 정책에 따름)
+- 즉 **컬러·구조·메타 룰**은 자산/호스팅 환경 무관하게 적용. **호스팅/URL/캐시**만 환경별로 치환.
+
+## 8. 참조
 
 - 디자인 시스템 SoT: `~/workspace/swk-infra/docs/_assets/swk-doc.{css,js}`
 - 첫 데모: `~/workspace/swk-infra/docs/machines/swk-dev-setup-guide-v2.html`
