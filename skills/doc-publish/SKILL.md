@@ -31,10 +31,13 @@ description: |
 
 ### 2. 자산 확인
 ```
-<repo>/docs/_assets/swk-doc.css   # v4 — markwand 톤 + GFM Alert 5색 + 빌딩블록
+<repo>/docs/_assets/swk-doc.css   # ★ v6 표준 (베이지+녹색 팔레트 + 공유 컴포넌트, v6 병합 완료)
 <repo>/docs/_assets/swk-doc.js    # Mermaid init + 코드블록 copy 버튼
 ```
-없으면 `~/workspace/swk-infra/docs/_assets/` 에서 복사 (마스터). swk-doc.css 는 `/etc/nginx/markwand-tokens.css` (markwand v3.5, MIT) 토큰을 그대로 매핑.
+없으면 `~/workspace/swk-infra/docs/_assets/` 에서 복사 (마스터). **`swk-doc.css` 하나만 로드하면 v6(녹색·흙빛 semantic·공유 컴포넌트)가 다 들어 있다** (2026-06-07 정식 병합). `swk-doc-v6-tokens.css` 는 deprecated no-op 스텁 — 새로 링크하지 말 것.
+
+- 팔레트 SoT: `docs/_assets/DESIGN-SYSTEM-v6-palette.md` (베이지+녹색, OKLCH 근거, WCAG AA, 레퍼런스 Farrow&Ball·Aesop)
+- 살아있는 예시: `josh-dev:8000/design-system-v5.html` (디자인 시스템 자체를 본 페이지) · `doc-catalog.html` (인덱스 IA 예시)
 
 ### 3. HTML 골격
 ```html
@@ -44,7 +47,7 @@ description: |
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{문서 제목}</title>
-<link rel="stylesheet" href="/_assets/swk-doc.css">
+<link rel="stylesheet" href="/_assets/swk-doc.css"><!-- v6 표준 (팔레트·컴포넌트 내장) -->
 </head>
 <body>
 <main class="doc">
@@ -84,21 +87,23 @@ http://<hostname>:8000/<short-name>.html    # MagicDNS (hostname = josh-dev 등)
 ```
 서버 단 `no-cache` 적용 — Ctrl+Shift+R 불필요.
 
-## 디자인 시스템 — 자산이 모두 들고 있음
+## 디자인 시스템 — v6 (베이지 + 녹색, 자산이 다 들고 있음)
 
-본문 텍스트의 색·폰트·크기·자간·표·코드 톤은 **`swk-doc.css` 가 자동 적용**. HTML 안에서 inline `style="font-size/color/font-family/letter-spacing/..."` 를 직접 지정하지 말 것 — 깨진다.
+본문 색·폰트·표·코드 톤 + 컴포넌트는 **`swk-doc.css` + `swk-doc-v6-tokens.css` 가 자동 적용**. HTML 안에서 inline `style="color/background/border-color/font/..."` 로 색·폰트를 직접 지정하지 말 것 — 토큰만 쓴다.
 
-기준 톤 (markwand v3.5):
-- 배경 `#fbf7ef` (베이지 크림), 본문 `#20231f`, accent `#0f766e` (teal)
-- 폰트 Inter / Pretendard / Apple SD Gothic Neo / Noto Sans KR
-- 16px / line-height 1.7 / letter-spacing -0.003em
-- h1 30px, h2 24px (둘 다 border-bottom), h3 20px, h4 18px
-- 표 — zebra 없음. 상하 굵은 line + row hairline
-- code — `#f4efe6` 베이지 톤
+기준 톤 (v6 — 따뜻한 베이지 + 녹색):
+- 배경 `#f9f4e9` (warm paper), surface `#fefbf6`, 본문 `#221f18`, **accent 녹색 `#446b3b`** (옛 teal `#0f766e` 폐기)
+- 보조 `#635f50` (muted) / `#786f5c` (subtle), border `#d0c8b8`, code `#eee7d8`
+- green scale: deep `#2d4d25` / primary `#446b3b` (=accent) / sage `#8b9a79`
+- 폰트 Inter / Pretendard / Apple SD Gothic Neo / Noto Sans KR · 16px / line-height 1.7
+- h1 30px, h2 24px (둘 다 border-bottom), h3 20px, h4 18px · 표 zebra 없음(상하 굵은 line + hairline)
 
-박스 (markwand GFM Alert 5색 매핑):
-- `.note` blue (info) · `.why` green (tip) · `.ok` green (success)
-- `.case` purple (important, 강조용) · `.warn` red (danger)
+박스 (callout — v6: 녹색 + 흙빛 semantic, blue·purple·원색 폐기):
+- `.note`·`.why` accent green subtle (정보·이유) · `.case` green border + 중립면 (핵심 강조)
+- `.ok` moss green `#4d542e` (성공) · `.warn` terracotta `#7a4737` (실패·위험) · `.caution` ochre `#6d512c` (주의·보류)
+- 상태가 아닌 "강조" 는 semantic 쓰지 말 것 — accent 또는 weight 로.
+
+> 색은 **토큰만** (`var(--swk-accent)`, `var(--swk-success)` …). 페이지에서 raw hex 를 새로 만들지 말 것 — 아래 §"색·컴포넌트 규율" 참조.
 
 ## 빌딩블록 (이게 doc-publish 의 본질)
 
@@ -109,14 +114,35 @@ markwand 가 못 하는 것들. 적극 활용.
 | Mermaid | flowchart / sequence 등 — **렌더 후 반드시 Playwright 로 깨짐 검증** | `<pre class="mermaid">` |
 | ASCII 박스 | 단순 도식 — **한국어 라벨이 많거나 의심스러우면 1순위** | `<pre><code>` |
 | hero-diagram | 페이지 상단 통합도 (1회) | `.hero-diagram` |
-| case / why / note / ok / warn | 의미 박스 (라벨 + 5색) | `.case` 등 |
+| note / why / case / ok / warn / caution | 의미 박스 (v6: 녹색 + 흙빛 semantic) | `.case` 등 |
 | before / after | 변경 전후 2칸 | `.before-after` |
 | landing-cards | 멀티-탭 진입 카드 | `.landing-cards` + `.landing-card` |
+| chip / stat-band / repo-tag | 상태 badge · 숫자 요약 · 출처 표시 (v6 공유) | `.chip[data-tone=...]` · `.stat-band` · `.repo-tag` |
 | details | 자주 안 보는 참조 | `<details><summary>` |
-| tabs + TOC | 멀티 essay 통합 + sticky 목차 | 페이지별 정의 (modern-infra-essays.html 참조) |
+| tabs + TOC / sidebar | 멀티 essay · 긴 인덱스 sticky 목차 (v6 공유) | `.rca-tabs`/`.essay-tabs` · `.toc-rail` (≥1100px 좌측) |
 | **error-2탭** | **버그/이슈/장애/정합성 분석 — 최상단 sticky 2탭(🙂 쉬운 분석 먼저 / 🔬 상세 분석), 필수** | §"오류·문제 분석" 참조 |
 | **figure (이미지)** | **실물 증거(도면/스크린샷/로그/그래프) 크롭 삽입 — 글 100줄보다 강함** | `.fig` + `<figcaption>` (§"오류·문제 분석") |
 | **decision-form + md-copy** | **사용자 입력 받기 (라디오/textarea) + 결과 markdown 일괄 클립보드 복사** | §"사용자 입력 받기" 참조 |
+
+## 색·컴포넌트 규율 (v6 — 방향 고정)
+
+> doc-publish 의 1차 부채는 "페이지마다 색·컴포넌트를 재발명" 한 것이었다(103 페이지 중 71 개 자체 `<style>`, distinct hex 275 종, 외래 Tailwind 팔레트 침투). v6 는 그걸 끊는 **규율**이다. 새 페이지·리팩토링은 아래를 지킨다.
+
+1. **색은 토큰만.** 페이지 `<style>`/inline 에서 raw `#hex`·`rgb()`·`hsl()` 로 새 색을 만들지 말 것. `var(--swk-accent / --swk-muted / --swk-success / …)` 만 쓴다. (예외: 데이터 시각화·증거 이미지 주석 — legend 동반 시에만.)
+2. **컴포넌트는 공유 레이어만 조합.** 탭·칩·카드·stat-band·figure·decision-form·commit-bar·toc-rail·repo-tag 는 `swk-doc-v6-tokens.css` 에 이미 있다. 페이지에서 다시 정의하지 말 것. 새 컴포넌트가 진짜 필요하면 페이지가 아니라 **v6 css 공유 레이어에 올린다**.
+3. **외래 팔레트 금지.** Tailwind slate/blue (`#0f172a`/`#475569`/`#2563eb`/`#f1f5f9` …)·보라·청록·GitHub 원색 금지. accent = 녹색 `#446b3b`, 정보도 녹색(blue 아님), semantic = moss/ochre/terracotta 흙빛.
+4. **이모지를 chrome 색 노이즈로 쓰지 말 것.** nav·섹션 헤더·칩 라벨은 텍스트 + 카운트로. (이모지 16종이 정리한 팔레트를 도로 흩뜨린다.)
+5. **sticky nav/탭은 한 줄 고정.** 넘치면 `overflow-x:auto` + `flex-wrap:nowrap` 으로 **가로 스크롤** — 절대 `flex-wrap:wrap` 으로 세로로 쌓여 sticky 행이 깊어지게 두지 말 것. (filterbar 를 `flex:1` 로 탐욕적으로 키우면 칩이 세로로 무너진다.)
+6. **클래스명 충돌 주의.** 공유 컴포넌트와 같은 이름(`.group-nav`/`.filterbar`/`.chip` …)을 페이지에서 재정의하면 specificity 충돌로 한쪽이 덮인다. 페이지 고유 레이아웃은 고유 prefix(`.tbar-*` 등)로.
+7. **페이지 `<style>` 허용 범위** = 특수 layout/SVG mechanics·print·grid column 수 정도. 그때도 색은 토큰.
+
+자가 점검 (publish 전):
+```bash
+# 페이지 <style>/inline 에 raw 색·외래 팔레트·이모지 chrome 이 새로 생겼는지
+rg -n '#[0-9a-fA-F]{6}|rgb\(|hsl\(' <file>.html        # → 토큰 외 0 (v4demo·swatch·data-viz 예외만)
+rg -n 'slate|#0f172a|#2563eb|#8b5cf6|#0f766e' <file>.html  # → 0 (외래·옛 teal)
+```
+distinct hex 를 늘리지 않는 것이 세련됨이다. 새 페이지가 색을 더하면 후퇴다.
 
 ## 사용자 입력 받기 (의사결정 페이지 패턴)
 
@@ -243,24 +269,18 @@ function copyMarkdown(md) {
 </main>
 ```
 
-### 탭 CSS — swk-doc.css 에 탭 클래스가 없으므로 페이지 `<style>` 에 추가
+### 탭 CSS — 정의하지 말 것. v6 공유 컴포넌트를 쓴다
 
-> inline `style=` 금지 룰은 본문 톤(색·폰트) 얘기다. swk-doc.css 에 없는 신규 UI(탭/figure)는 페이지 `<style>` 블록에 클래스로 정의해도 된다. 단 색은 markwand 토큰(accent `#0f766e`, 베이지 `#fbf7ef`/`#e3dccb`/`#f1ead9`/`#897f6a`)과 맞춰 톤이 깨지지 않게.
+> ⚠️ (옛 가이드는 페이지 `<style>` 에 `.rca-tabs`/`.fig` 를 직접 정의하라고 했다 — 그게 sprawl 의 원인이었다.) **v6 부터 `.rca-tabs`·`.rca-pane`·`.fig`·`.fig figcaption`·`.fig-narrow` 는 `swk-doc-v6-tokens.css` 에 이미 있다.** 페이지에서 다시 정의하지 말고 **마크업만** 쓴다(아래 골격). 색·간격은 v6 토큰이 적용된다. 별도 `<style>` 불필요(JS 토글만 페이지에 둔다).
 
+마크업만 (CSS 0):
 ```html
-<style>
-/* 최상단 sticky 탭 — modern-infra-essays.html 의 essay-tabs 패턴 */
-body > .rca-tabs{position:sticky;top:0;z-index:50;background:#fbf7ef;border-bottom:1px solid #e3dccb;display:flex;gap:0;flex-wrap:wrap;padding:6px max(16px,calc((100vw - 880px)/2))}
-.rca-tabs button{background:transparent;border:none;padding:10px 16px;font:inherit;font-weight:600;color:#897f6a;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:6px 6px 0 0;letter-spacing:-0.003em;transition:all .15s}
-.rca-tabs button:hover{color:#20231f;background:#f1ead9}
-.rca-tabs button[aria-selected="true"]{color:#0f766e;border-bottom-color:#0f766e;background:#fff}
-.rca-pane{display:none}
-.rca-pane[data-active]{display:block}
-.fig{margin:1.6rem 0}
-.fig img{width:100%;border:1px solid #e3dccb;border-radius:6px;background:#fff}
-.fig figcaption{font-size:.9rem;color:#897f6a;margin-top:.55rem;line-height:1.5}
-.fig-narrow{max-width:760px}
-</style>
+<nav class="rca-tabs" role="tablist" aria-label="분석 깊이">
+  <button role="tab" data-tab="easy" aria-selected="true">🙂 쉬운 분석</button>
+  <button role="tab" data-tab="tech" aria-selected="false">🔬 상세 분석</button>
+</nav>
+<!-- main 안: <section class="rca-pane" id="pane-easy" data-active>…</section> + #pane-tech -->
+<!-- 이미지: <div class="fig"><img src="…"><figcaption>…</figcaption></div> -->
 ```
 
 ### 탭 JS — 평범한 `<script>` 하나
@@ -369,7 +389,10 @@ doc-publish HTML:   http://josh-dev:8000/<short-name>.html
 ## publish 전 체크
 
 - [ ] `.doc-meta` (작성일·SoT) + `.lead` 있음
-- [ ] inline 스타일로 색·폰트·사이즈 직접 지정 0
+- [ ] **`swk-doc.css` 로드** (v6 표준 내장 — 별도 토큰 파일 불필요)
+- [ ] inline/`<style>` 에 raw 색·폰트 직접 지정 0 — 토큰만 (`rg '#[0-9a-fA-F]{6}|rgb\(' <file>` → 0). 외래 팔레트·옛 teal·이모지 chrome 0 (§"색·컴포넌트 규율")
+- [ ] 탭·칩·카드·figure·decision-form·toc-rail 등은 **v6 공유 컴포넌트 재사용** (페이지에서 재정의 0). 페이지 고유 레이아웃은 고유 prefix
+- [ ] sticky nav/탭은 한 줄 고정 (넘치면 가로 스크롤, 세로로 안 쌓임)
 - [ ] **Mermaid 다이어그램이 있으면 Playwright 로 깨짐 검증** — 한국어 라벨·특수문자(`①`/`→`/괄호) 가 syntax error 자주 유발. 깨지면 ASCII 박스로 대체
 - [ ] 시크릿 grep (`token|password|secret|api[_-]?key|bearer`) 매칭 0
 - [ ] symlink 만 — `~/public_html/` 에 원본 두지 않음
@@ -400,7 +423,7 @@ swk-infra 없는 외부 레포에서 쓸 때 — 4 축만 치환:
 
 | 축 | swk-infra | 로컬 대체 |
 |---|---|---|
-| 디자인 자산 | `<repo>/docs/_assets/swk-doc.{css,js}` | 본인 레포에 직접 복사 |
+| 디자인 자산 | `swk-doc.css` (v6 내장) + `swk-doc.js` | 본인 레포에 직접 복사 |
 | 호스팅 | `httpshare.service` (Tailscale, no-cache) | `python3 -m http.server` / nginx / caddy |
 | 공유 URL | `http://<hostname>:8000` (Tailnet) | `http://127.0.0.1:8000` 또는 본인 도메인 |
 | 캐시 무효화 | 서버 단 `Cache-Control: no-cache` | 없으면 자산에 `?v=<mtime>` 쿼리 |
@@ -409,8 +432,9 @@ swk-infra 없는 외부 레포에서 쓸 때 — 4 축만 치환:
 
 ## 참조
 
-- 디자인 자산 SoT: `~/workspace/swk-infra/docs/_assets/swk-doc.{css,js}`
+- 디자인 자산 SoT: `~/workspace/swk-infra/docs/_assets/swk-doc.css` (v6 표준 — 팔레트·컴포넌트 병합 내장) + `swk-doc.js`
+- 팔레트 SoT(베이지+녹색, OKLCH·WCAG·레퍼런스): `~/workspace/swk-infra/docs/_assets/DESIGN-SYSTEM-v6-palette.md`
 - markwand 토큰 원본: `/etc/nginx/markwand-tokens.css`
-- 실제 사용 예: `~/workspace/swk-infra/docs/essays/modern-infra-essays.html` (탭 + TOC + 5 essay 통합)
+- 실제 사용 예: `design-system-v5.html` (디자인 시스템 페이지) · `doc-publish-catalog.html` (인덱스 IA — 사이드바·검색·필터·repo태그) · `modern-infra-essays.html` (탭 + TOC)
 - HTML SoT 룰 (CLAUDE.md §8): `~/workspace/swk-infra/CLAUDE.md`
 - HTTP 노출 셋업: `~/workspace/swk-infra/docs/machines/swk-dev.md` §3.1.1
