@@ -13,6 +13,7 @@ Claude Code skills for multi-agent orchestration, multi-LLM consultation, and qu
 | `/claude-filter` | Skill | Production agent design principles — prompt/CLAUDE.md/skill audit |
 | `/codex` | Skill | Codex CLI delegation standard — implementation handoff guide (gpt-5.3-codex) |
 | `/doc-publish` | Skill | **Internal (SPACEWALK)** — `docs/` → swk-doc HTML 출간, `~/public_html/` symlink 로 Tailscale 멤버 공유. swk-infra 자산 의존. |
+| `/wiki-upload` | Skill | **Internal (SPACEWALK)** — 사람이 손에 든 자료를 swk-wiki `10_Raw/ingest` 에 메타 추론으로 투입(append-only). `~/workspace/swk-wiki` 절대경로 의존. |
 
 ## Install
 
