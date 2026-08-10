@@ -3,7 +3,7 @@ name: wiki-upload
 description: >-
   swk-wiki(회사 장기기억)의 10_Raw 에 사람이 손에 든 자료를 투입(업로드)하는 가이드 스킬.
   리서치·조사·외부 기사·회의 메모·데이터 덤프 등을 받아, 메타(제목·출처·시점·민감도·맥락)를
-  에이전트가 대화·파일·git 맥락에서 **최대한 추론**해 10_Raw/ingest 에 날짜-slug 스냅샷으로
+  에이전트가 대화·파일·git 맥락에서 **최대한 추론**해 swk-wiki-vault/10_Raw/ingest 에 날짜-slug 스냅샷으로
   떨군다(append-only). 묻기는 최후 수단 — 추론값으로 먼저 만들고 근거를 보고해 사용자가
   틀린 것만 고치게 한다. 투입 시 읽기 좋게 가볍게 다듬되, 한 번 들어간 Raw 는 절대 수정하지
   않는다(업데이트=새 스냅샷). restricted 자료는 AI API 전송 차단. 대상 레포는 항상
@@ -19,7 +19,7 @@ description: >-
 자동 수집기(Slack/Notion collector)의 **사람 버전**. 사람이 손에 든 자료를 규격대로 Raw 에 떨군다.
 
 - **대상 레포**: `~/workspace/swk-wiki` — 어디서 호출하든 **절대경로**로 접근(이 스킬은 나중에 전역 `~/.claude/skills/` 로 이동해도 동작해야 하므로 cwd 비의존). 모든 git 은 `git -C ~/workspace/swk-wiki …`.
-- **투입 위치**: `10_Raw/ingest/`.
+- **투입 위치**: `swk-wiki-vault/10_Raw/ingest/`.
 
 ## 제1원칙 — 투입 스냅샷은 동결 (가장 중요)
 
@@ -36,7 +36,7 @@ description: >-
 | 형태 | 처리 |
 |------|------|
 | 붙여넣은 텍스트/마크다운 | 본문에 그대로(가벼운 정리 OK) |
-| 파일 경로 | 텍스트(md/txt/csv 등)는 본문. **무거운 바이너리(PDF·고해상·도면)는 wiki-minio 업로드 후 포인터만**(`asset_url`·`checksum`·`captured_at` — 00_principles §7). 작은 표시 이미지(~1–2MB↓)는 `10_Raw/assets/` |
+| 파일 경로 | 텍스트(md/txt/csv 등)는 본문. **무거운 바이너리(PDF·고해상·도면)는 wiki-minio 업로드 후 포인터만**(`asset_url`·`checksum`·`captured_at` — 00_principles §7). 작은 표시 이미지(~1–2MB↓)는 `swk-wiki-vault/10_Raw/assets/` |
 | URL | 본문에 출처로 + 만료 대비 **핵심 발췌**(전문 복제는 저작권 보고) |
 
 ## 메타 — 거의 다 추론한다 (LEAN 7필드)
@@ -47,7 +47,7 @@ description: >-
 |------|-----------|
 | `collected_at` | 오늘 날짜. |
 | `collected_by` | `git -C ~/workspace/swk-wiki config user.name` (이 환경 = Josh). |
-| 대상 레포·위치 | 고정 (`~/workspace/swk-wiki` · `10_Raw/ingest/`) — 절대 묻지 않음. |
+| 대상 레포·위치 | 고정 (`~/workspace/swk-wiki` · `swk-wiki-vault/10_Raw/ingest/`) — 절대 묻지 않음. |
 | `title` | 내용/파일명 첫 줄에서. |
 | `type` | 자료 형태에서: 회의록→`meeting`, 기사·논문 URL→`article`, 표·csv·덤프→`data`, 조사 글→`research`, 그 외→`note`. 모르면 비움. |
 | `source` | 입력 출처에서: 붙여넣은 대화면 `대화: <주제>`, 파일이면 경로·원출처, URL 이면 그 URL. |
@@ -82,7 +82,7 @@ collected_at:   # YYYY-MM-DD
 
 1. 입력 받기(텍스트/파일/URL). 무거운 바이너리는 §7 포인터 처리.
 2. 메타를 **추론으로 전부 채운다**(위 표). "꼭 물어야 할 때"에 해당할 때만 한 번 묻는다.
-3. 파일 생성: `10_Raw/ingest/<collected_at>-<slug>.md` (slug = title kebab). 본문 = (가볍게 정리한) 투입 내용 + 출처 링크.
+3. 파일 생성: `swk-wiki-vault/10_Raw/ingest/<collected_at>-<slug>.md` (slug = title kebab). 본문 = (가볍게 정리한) 투입 내용 + 출처 링크.
 4. **append-only 확인** — 기존 Raw 파일을 수정/삭제하지 않았는지 점검.
 5. 반영: `git -C ~/workspace/swk-wiki` 새 브랜치 → 커밋 → push → PR.
    - Raw 추가는 append-only 라 리뷰는 가볍다. 사용자가 "직접 넣어" 식으로 **명시 승인**하면 머지까지 실행(= "사람이 merge", CLAUDE.md §2). 무단 main 직접 push 는 금지.
