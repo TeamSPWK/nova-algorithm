@@ -143,7 +143,7 @@ markwand 가 못 하는 것들. 적극 활용.
 같은 .md 를 양쪽에서 보고 본문 톤이 일치하는지:
 ```
 markwand (참조):    http://josh-dev:9999/markwand/?path=<url-encoded path>
-doc-publish HTML:   http://josh-dev:8000/<short-name>.html
+doc-publish HTML:   https://josh-dev.sparrow-spectrum.ts.net/publish/<short-name>.html
 ```
 차이가 의심되면 Playwright 로 셀렉터별 computed style diff(body/h1~h6/p/a/code/pre/table). 어긋나면 inline 스타일이나 충돌 셀렉터를 의심.
 
