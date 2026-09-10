@@ -8,7 +8,7 @@ user-invocable: true
 
 # LLM Review - Multi-AI Consultation Skill
 
-Provides a reliable interface for calling external LLMs (Gemini, GPT) with fixed model configurations.
+Provides a reliable interface for calling external LLMs (Gemini, GPT) with code-owned model configurations.
 
 ## Purpose
 
@@ -21,9 +21,18 @@ Provides a reliable interface for calling external LLMs (Gemini, GPT) with fixed
 ## Usage
 
 ```bash
-python3 ~/.claude/skills/llm-review/llm_client.py \
-  --provider [gemini|openai] \
-  --phase [consultation|review|regulation] \
+LLM_CLIENT=
+for candidate in \
+  "$HOME/.claude/skills/llm-review/llm_client.py" \
+  "$HOME/.agents/skills/llm-review/llm_client.py" \
+  "$PWD/skills/llm-review/llm_client.py"; do
+  [ -f "$candidate" ] && { LLM_CLIENT="$candidate"; break; }
+done
+[ -n "$LLM_CLIENT" ] || { echo "llm-review is not installed and this is not its source checkout" >&2; exit 1; }
+
+python3 "$LLM_CLIENT" \
+  --provider gemini \
+  --phase consultation \
   --prompt "Your prompt" \
   --output /tmp/result.json
 ```
@@ -57,13 +66,10 @@ python3 ~/.claude/skills/llm-review/llm_client.py \
 
 ---
 
-## Models (HARDCODED - DO NOT CHANGE)
+## Models
 
-| Phase | Gemini | OpenAI | Reasoning |
-|-------|--------|--------|-----------|
-| consultation | `gemini-3-flash-preview` | `gpt-5.4` (Chat Completions) | - |
-| review | `gemini-3.1-pro-preview` | `gpt-5.4` (Responses API) | **medium** |
-| regulation | `gemini-3.1-pro-preview` | `gpt-5.4` (Responses API, web_search) | **high** |
+`llm_client.py` is the only source of truth for model IDs and reasoning settings. Inspect the live configuration with
+`python3 "$LLM_CLIENT" --list-models`; do not copy that output back into this document.
 
 ---
 
@@ -73,7 +79,7 @@ python3 ~/.claude/skills/llm-review/llm_client.py \
 {
   "success": true,
   "provider": "gemini",
-  "model": "gemini-3-flash-preview",
+  "model": "<configured model>",
   "response": "LLM response text...",
   "tokens": {"prompt": 1234, "completion": 567, "total": 1801},
   "elapsed_seconds": 3.2
@@ -93,7 +99,7 @@ Error: `"success": false, "error": "...", "error_type": "..."`
 
 Auto-loads from `.env` in current working directory, then walks up to workspace root.
 
-**Check keys:** `python3 ~/.claude/skills/llm-review/llm_client.py --check-keys`
+**Check keys:** `python3 "$LLM_CLIENT" --check-keys`
 
 ---
 
