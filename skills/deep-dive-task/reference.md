@@ -8,21 +8,21 @@
 
 ```bash
 # 기본 호출
-python3 ~/.claude/skills/llm-review/llm_client.py \
-  --provider [gemini|openai] --phase [consultation|review] \
+python3 "$LLM_CLIENT" \
+  --provider gemini --phase consultation \
   --prompt "$PROMPT" --output /tmp/result.json
 
 # 파일 기반 프롬프트 (Phase 2 review용)
-python3 ~/.claude/skills/llm-review/llm_client.py \
+python3 "$LLM_CLIENT" \
+  --provider gemini --phase review \
   --prompt-file "/docs/tasks/task-definition.md" --output /tmp/result.json
 
 # 병렬 실행: & + wait $PID1 $PID2
 # 결과 파싱: jq -r '.success' / jq -r '.response' / jq '.tokens'
 ```
 
-**모델 (HARDCODED — 변경 금지)**:
-- Consultation: `gemini-3-flash-preview`, `gpt-5.4`
-- Review: `gemini-3.1-pro-preview`, `gpt-5.4` (Responses API, reasoning=high)
+`LLM_CLIENT` 해석과 모델 정본은 [SKILL.md](./SKILL.md)의 Prerequisites 및
+`llm-review/llm_client.py`를 따른다. 모델 ID를 이 참조 문서에 복제하지 않는다.
 
 ---
 

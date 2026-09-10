@@ -20,24 +20,34 @@ Transform user problems into implementation-ready TASK documents through paralle
 1. **Read context** (first found wins):
    - `cat nova-context.md` (project root, next to CLAUDE.md)
    - If not found: read `CLAUDE.md` instead (project instructions as context)
-2. **Check API keys**: `python3 ~/.claude/skills/llm-review/llm_client.py --check-keys`
+2. **Resolve the bundled client and check API keys**:
+
+   ```bash
+   LLM_CLIENT=
+   for candidate in \
+     "$HOME/.claude/skills/llm-review/llm_client.py" \
+     "$HOME/.agents/skills/llm-review/llm_client.py" \
+     "$PWD/skills/llm-review/llm_client.py"; do
+     [ -f "$candidate" ] && { LLM_CLIENT="$candidate"; break; }
+   done
+   [ -n "$LLM_CLIENT" ] || { echo "llm-review client not found" >&2; exit 1; }
+   python3 "$LLM_CLIENT" --check-keys
+   ```
 
 ---
 
-## AI Models (HARDCODED — do NOT change)
+## AI Models
 
-| Phase | Gemini | OpenAI |
-|-------|--------|--------|
-| Consultation | `gemini-3-flash-preview` | `gpt-5.4` |
-| Review | `gemini-3.1-pro-preview` | `gpt-5.4` (Responses API, reasoning=high) |
+Model IDs and reasoning settings belong only to `llm-review/llm_client.py`. Use `--list-models` when the live values
+matter; do not duplicate them in this workflow.
 
 ---
 
 ## LLM Client
 
 ```bash
-python3 ~/.claude/skills/llm-review/llm_client.py \
-  --provider [gemini|openai] --phase [consultation|review] \
+python3 "$LLM_CLIENT" \
+  --provider gemini --phase consultation \
   --prompt "$PROMPT" --output /tmp/result.json
 
 # Parse: jq -r '.success' / jq -r '.response' / jq '.tokens'
