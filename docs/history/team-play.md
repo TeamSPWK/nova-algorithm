@@ -1,3 +1,7 @@
+# 은퇴한 team-play 명령의 역사 기록
+
+이 절차는 2026-10-04 은퇴했으며 실행 규율이 아닙니다. 일반 작업 분담은 현행 subagent/subsession, 배송은 `/pr`를 따릅니다.
+
 ---
 name: team-play
 description: |

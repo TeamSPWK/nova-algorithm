@@ -38,6 +38,10 @@ for d in "$SCRIPT_DIR/skills/"*/; do
   check_destination "$source_path" "$CLAUDE_DIR/skills/$(basename "$source_path")"
 done
 
+# Remove this checkout's existing links, including retired entry points.
+# uninstall.sh owns the exact-target cleanup contract; user-owned replacements stay.
+bash "$SCRIPT_DIR/uninstall.sh"
+
 # Symlink commands
 for f in "$SCRIPT_DIR/commands/"*.md; do
   [ -f "$f" ] || continue
@@ -58,6 +62,3 @@ done
 echo ""
 echo "Done! Restart Claude Code to activate."
 echo ""
-echo "Required for /llm-review and /deep-dive-task:"
-echo "  export GEMINI_API_KEY=\"your-key\""
-echo "  export OPENAI_API_KEY=\"your-key\""
