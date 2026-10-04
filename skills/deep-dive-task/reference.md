@@ -7,22 +7,27 @@
 ## 1. LLM Client 사용법
 
 ```bash
+# Nova checkout에서 실행합니다.
+NOVA_ROOT="$(git rev-parse --show-toplevel)"
+LLM_CLIENT="$NOVA_ROOT/skills/llm-review/llm_client.py"
+TASK_SCRATCH="$HOME/scratch/$(date +%F)_nova-client"
+mkdir -p "$TASK_SCRATCH"
+
 # 기본 호출
 python3 "$LLM_CLIENT" \
   --provider gemini --phase consultation \
-  --prompt "$PROMPT" --output /tmp/result.json
+  --prompt "$PROMPT" --output "$TASK_SCRATCH/result.json"
 
 # 파일 기반 프롬프트 (Phase 2 review용)
 python3 "$LLM_CLIENT" \
   --provider gemini --phase review \
-  --prompt-file "/docs/tasks/task-definition.md" --output /tmp/result.json
+  --prompt-file "/docs/tasks/task-definition.md" --output "$TASK_SCRATCH/result.json"
 
 # 병렬 실행: & + wait $PID1 $PID2
 # 결과 파싱: jq -r '.success' / jq -r '.response' / jq '.tokens'
 ```
 
-`LLM_CLIENT` 해석과 모델 정본은 [SKILL.md](./SKILL.md)의 Prerequisites 및
-`llm-review/llm_client.py`를 따른다. 모델 ID를 이 참조 문서에 복제하지 않는다.
+클라이언트 경로와 옵션은 보존한 [llm_client.py](../llm-review/llm_client.py)의 `--help`를 따릅니다. 모델 ID를 이 참조 문서에 복제하지 않습니다.
 
 ---
 

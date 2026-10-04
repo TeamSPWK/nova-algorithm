@@ -37,4 +37,10 @@ done
 # Compatibility cleanup for links created before doc-publish was retired.
 remove_owned_link "$SCRIPT_DIR/skills/doc-publish" "$CLAUDE_DIR/skills/doc-publish" "skill: doc-publish (retired)"
 
+# Retired catalogues no longer participate in the discovery loops above.
+for name in deep-dive-task llm-review codex wiki-upload pikes-filter; do
+  remove_owned_link "$SCRIPT_DIR/skills/$name" "$CLAUDE_DIR/skills/$name" "skill: $name (retired)"
+done
+remove_owned_link "$SCRIPT_DIR/commands/team-play.md" "$CLAUDE_DIR/commands/team-play.md" "command: team-play (retired)"
+
 echo "Done!"

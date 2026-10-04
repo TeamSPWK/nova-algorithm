@@ -1,12 +1,6 @@
 ---
 name: claude-filter
-description: |
-  프롬프트, CLAUDE.md, 에이전트 설정, 스킬 정의를 프로덕션 에이전트 설계 원칙으로 평가.
-  "review my prompt", "audit this", "evaluate my CLAUDE.md", "score this skill",
-  "check my agent config", "is this prompt good enough", "이 프롬프트 괜찮아?",
-  "이거 리뷰해줘", "개선점 있어?" 등 프롬프트/에이전트/스킬 품질 피드백 요청 시 사용.
-  시스템 프롬프트, CLAUDE.md, 스킬 파일을 붙여넣고 의견을 구하는 경우에도 트리거.
-  Claude 전용이 아닌 모든 LLM 프롬프트/에이전트 설정에 적용 가능.
+description: "Claude 에이전트 지침·프롬프트·스킬의 설계를 점검할 때 사용한다."
 allowed-tools: Read, Glob, Grep
 ---
 
