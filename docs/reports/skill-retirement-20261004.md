@@ -32,3 +32,7 @@ install.sh는 배포할 대상을 먼저 확인한 뒤 uninstall.sh의 소유 �
 ## 태스크보드
 
 없음. 기존 승인 보고서의 묶음을 수행합니다.
+
+## 리뷰 수정
+
+1차 리뷰는 보존 reference.md가 삭제된 SKILL.md에서 클라이언트 초기화를 찾는 문제 한 건을 반려했습니다. 보존된 llm_client.py로 직접 연결하고 checkout 기준 경로·scratch 결과 경로를 예제에 적었습니다. claude-filter description도 실제 지침/프롬프트/스킬 설계 점검 요청으로 축약했습니다. 클라이언트 `--help` 호출과 Markdown 링크 실재 검사가 통과했습니다.
